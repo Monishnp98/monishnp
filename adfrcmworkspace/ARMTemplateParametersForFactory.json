@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "adfrcmworkspace"
+		},
+		"ls_adlsgen2_accountKey": {
+			"value": ""
+		},
+		"ls_azuresqldb_password": {
+			"value": ""
+		},
+		"ls_databricksdeltalake_accessToken": {
+			"value": ""
+		},
+		"ls_sqldbfiles_password": {
+			"value": ""
+		},
+		"HttpServer1_properties_typeProperties_url": {
+			"value": "https://files.cdn.thinkific.com"
+		},
+		"ls_adlsgen2_properties_typeProperties_url": {
+			"value": "https://ttfstorage.dfs.core.windows.net/"
+		},
+		"ls_azuresqldb_properties_typeProperties_server": {
+			"value": "ttrcmserver.database.windows.net"
+		},
+		"ls_azuresqldb_properties_typeProperties_database": {
+			"value": "@{linkedService().db_name}"
+		},
+		"ls_azuresqldb_properties_typeProperties_userName": {
+			"value": "sqladmin"
+		},
+		"ls_sqldbfiles_properties_typeProperties_server": {
+			"value": "ttrcmserver.database.windows.net"
+		},
+		"ls_sqldbfiles_properties_typeProperties_database": {
+			"value": "@{linkedService().database}"
+		},
+		"ls_sqldbfiles_properties_typeProperties_userName": {
+			"value": "sqladmin"
+		}
+	}
+}
