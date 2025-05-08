@@ -1,0 +1,117 @@
+--W6- Advance window func
+--IMPORTANT
+
+--write a query to print 3rd highest salaried employee details for each department (give preferece to younger employee in case of a tie). 
+       --In case a department has less than 3 employees then print the details of highest salaried employee in that department.
+
+with rnk as(
+select  *, dense_rank() over(partition by dept_id order by salary desc) as rnk from employee),
+
+cnt as (select dept_id, count(*) as cnts
+from employee 
+group by dept_id)
+
+select r.*, c.cnts
+from rnk as r
+inner join cnt as c
+on r.dept_id = c.dept_id
+where r.rnk = 3 or (c.cnts = 1 and r.rnk=1)
+
+--The above is using joins 
+--The below is using window funtion with aggregations
+
+with cte1 as (
+select  *, 
+dense_rank() over(partition by dept_id order by salary desc) as rnk, 
+count(*) over(partition by dept_id) as cnt from employee) -- window fucntion wit aggregations
+
+select * from cte1 where rnk = 3 or (cnt=1 and rnk=1)
+
+--2- write a query to find top 3 and bottom 3 products by sales in each region.
+
+with cte1 as(
+select region,product_id,sum(sales) as sales_reg
+from orders
+group by region, product_id),
+
+cte2 as(select *, 
+DENSE_RANK() over (partition by region order by sales_reg desc) as rnk_desc,
+DENSE_RANK() over (partition by region order by sales_reg) as rnk_asc
+from cte1)
+
+select region,product_id,sales_reg,
+case when rnk_desc <=3 then 'Top3' else 'bottom3' end as top_bottom
+from cte2
+where rnk_desc <=3 or rnk_asc <=3
+
+
+ --3- Among all the sub categories..which sub category had highest month over month growth by sales in Jan 2020.
+
+ /*Approach 
+	extract month and year
+	sum sales based, group based on year and month- Put the above in cte
+	use lag to find prvious month sales , Partition on subcategory and order based year and month 
+	caluclate the mom using ((current_month_sales - pre_month_sales) / pre_month_sale)
+	Order based on this cculated col and get top1
+	*/ 
+
+ with sbc_sales as (
+select sub_category,format(order_date,'yyyyMM') as year_month, sum(sales) as sales
+from orders
+group by sub_category,format(order_date,'yyyyMM')
+)
+, prev_month_sales as (select *,lag(sales) over(partition by sub_category order by year_month) as prev_sales
+from sbc_sales)
+select  top 1 * , (sales-prev_sales)/prev_sales as mom_growth
+from prev_month_sales
+where year_month='202001'
+order by mom_growth desc
+
+--My solution is below
+ with cte1 as(
+ select sub_category, DATEPART(YEAR, order_date) as order_year, DATEPART(MONTH, order_date) as order_month,sum(sales) as month_sales
+ from  orders
+ group by sub_category, DATEPART(YEAR, order_date) , DATEPART(MONTH, order_date)
+ ),
+
+ cte2 as (select * , lag(month_sales,1) over(partition by sub_category order by order_year,order_month) as prv_sales
+ from cte1)
+
+ select top 1 *,((month_sales-prv_sales)/prv_sales) mom_sales
+ from cte2 
+ where order_year in('2020') and order_month in ('01')
+ order by mom_sales desc
+
+
+-- write a query to print top 3 products in each category by year over year sales growth in year 2020.
+
+with yr_sales as (
+select category, product_id, format(order_date, 'yyyy') as yr, sum(sales) as yr_sales
+from orders
+group by  category, product_id,format(order_date, 'yyyy')),
+
+previous_sales  as (select *, lag(yr_sales) over(partition by category order by yr) as previous_sales from yr_sales),
+
+sales_rnk as (select *,((yr_sales-previous_sales)/previous_sales) as yoy_sale, rank() over(partition by category order by ((yr_sales-previous_sales)/previous_sales) desc) as rnk
+from previous_sales
+where yr in ('2020'))
+
+select * from sales_rnk
+where rnk <=3
+
+-- write a query to get start time and end time of each call from above 2 tables.Also create a column of call duration in minutes.  Please do take into account that
+-- there will be multiple calls from one phone number and each entry in start table has a corresponding entry in end table.
+with call_start as (select *,dense_rank() over(partition by phone_number order by start_time) as cs_rnk
+from call_start_logs),
+
+call_end as (select *,dense_rank() over(partition by phone_number order by end_time) as ce_rnk
+from call_end_logs),
+
+pre_final as (select cs.phone_number,cs.start_time, ce.end_time 
+from call_start as cs
+inner join call_end as ce
+on cs.phone_number = ce.phone_number
+and cs.cs_rnk = ce.ce_rnk)
+
+select *, DATEDIFF(MINUTE,start_time, end_time) as call_duration
+from pre_final
