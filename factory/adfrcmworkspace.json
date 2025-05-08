@@ -1,9 +1,0 @@
-{
-	"name": "adfrcmworkspace",
-	"location": "centralindia",
-	"identity": {
-		"type": "SystemAssigned",
-		"principalId": "f6b7de98-c689-4cef-bdfd-e927e52c773c",
-		"tenantId": "0acc3735-6689-43d7-b7be-83d53c9911d5"
-	}
-}
